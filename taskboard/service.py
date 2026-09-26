@@ -45,3 +45,9 @@ class TaskService:
     def list_tasks(self) -> list[Task]:
         """Return all tasks ordered by id."""
         return self._repo.list_all()
+
+    def completion_rate(self) -> float:
+        """Return the percentage of tasks that are done, rounded to 1 decimal place."""
+        tasks = self._repo.list_all()
+        done = sum(1 for t in tasks if t.done)
+        return round(done / len(tasks) * 100, 1)
