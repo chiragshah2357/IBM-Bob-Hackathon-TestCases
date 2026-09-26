@@ -79,6 +79,17 @@ class TaskRepository:
             raise TaskNotFoundError(task.id)
 
 
+    def list_page(self, page: int, page_size: int) -> list[Task]:
+        """Return one page of tasks ordered by id. Pages are 1-indexed."""
+        if page < 1 or page_size < 1:
+            raise ValueError("page and page_size must be >= 1")
+        offset = page * page_size
+        rows = self._conn.execute(
+            "SELECT * FROM tasks ORDER BY id LIMIT ? OFFSET ?", (page_size, offset)
+        ).fetchall()
+        return [_row_to_task(r) for r in rows]
+
+
 def _row_to_task(row: sqlite3.Row) -> Task:
     return Task(
         id=row["id"],
