@@ -45,3 +45,7 @@ class TaskService:
     def list_tasks(self) -> list[Task]:
         """Return all tasks ordered by id."""
         return self._repo.list_all()
+
+    def list_overdue(self, today: date) -> list[Task]:
+        """Return tasks that are past their due date."""
+        return [t for t in self._repo.list_all() if t.due_date and t.due_date <= today]
