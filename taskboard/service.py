@@ -5,8 +5,9 @@ from __future__ import annotations
 import logging
 from datetime import date
 
+from taskboard.formatting import format_task_detail
 from taskboard.models import Task
-from taskboard.storage import TaskRepository
+from taskboard.storage import TaskNotFoundError, TaskRepository
 
 logger = logging.getLogger(__name__)
 
@@ -45,3 +46,16 @@ class TaskService:
     def list_tasks(self) -> list[Task]:
         """Return all tasks ordered by id."""
         return self._repo.list_all()
+
+    def describe(self, task_id: int) -> str:
+        """Return a multi-line, human-readable description of one task.
+
+        Raises TaskNotFoundError if no task has ``task_id``.
+        """
+        try:
+            task = self._repo.get(task_id)
+        except TaskNotFoundError:
+            logger.warning("cannot describe task %s: not found", task_id)
+            raise
+        logger.debug("describing task %s", task_id)
+        return format_task_detail(task)
