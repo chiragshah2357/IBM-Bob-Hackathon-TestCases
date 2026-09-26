@@ -1,12 +1,13 @@
-# TICKET-011: Bulk-complete tasks by tag
+# TICKET-011: Bulk status changes
 
 ## Summary
 
-Add `TaskService.complete_all_with_tag(tag: str) -> int` returning how many tasks were completed.
+Change the status of many tasks at once.
 
 ## Acceptance criteria
 
-- Tag match is case-insensitive.
-- Tasks already done are not counted.
-- Follow STYLE_GUIDE: snake_case, type hints, docstring, no bare except.
+- `TaskService.complete_all_with_tag(tag: str) -> int`: completes open tasks with the tag (case-insensitive) and returns how many changed. Tasks already done are not counted.
+- `TaskService.complete_many(task_ids: list[int]) -> int`: if any id is missing raise `TaskNotFoundError` and change nothing (SPEC §3).
+- `TaskService.reopen_task(task_id: int) -> Task`.
+- Follow STYLE_GUIDE: snake_case, type hints, docstrings, no bare except.
 - Tests included.

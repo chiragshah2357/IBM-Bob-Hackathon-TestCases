@@ -2,11 +2,11 @@
 
 ## Summary
 
-Extend `parse_date(value: str, today: date | None = None) -> date`.
+Let users type due dates naturally.
 
 ## Acceptance criteria
 
-- Accept `today` and `tomorrow` (case-insensitive) relative to the `today` argument (defaults to `date.today()`).
-- ISO `YYYY-MM-DD` still works.
-- Anything else raises `ValueError`.
+- `parse_date(value: str, today: date | None = None) -> date` per SPEC §6 (`today` defaults to `date.today()`).
+- `format_relative(due: date, today: date) -> str`: `today`, `tomorrow`, `yesterday`, `in N days`, `N days ago`.
+- `TaskService.set_due_date(task_id: int, value: str, today: date | None = None) -> Task` using `parse_date`; missing id raises `TaskNotFoundError`.
 - Tests included.

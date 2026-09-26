@@ -1,13 +1,13 @@
-# TICKET-008: Export tasks to CSV
+# TICKET-008: Export tasks
 
 ## Summary
 
-Add `taskboard/export.py` with `export_csv(tasks: list[Task], path: str) -> int` returning rows written.
+Export tasks for spreadsheets and other tools, in `taskboard/export.py`.
 
 ## Acceptance criteria
 
-- Header: `id,title,priority,due_date,done,tags`.
-- Tags joined with `;`.
-- Must produce valid CSV via the `csv` module so titles with commas/quotes round-trip (SPEC §5).
+- `task_to_dict(task: Task) -> dict` with ISO date strings.
+- `export_csv(tasks: list[Task], path: str) -> int` returns rows written. Header `id,title,priority,due_date,done,tags`; tags joined with `;`. Must be valid CSV via the `csv` module so titles with commas/quotes round-trip (SPEC §5).
+- `export_json(tasks: list[Task], path: str) -> int` per SPEC §5.
 - Follow STYLE_GUIDE (logging, not print).
 - Tests included.

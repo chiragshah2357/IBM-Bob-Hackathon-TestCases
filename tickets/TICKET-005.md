@@ -1,12 +1,16 @@
-# TICKET-005: Add a tag to a task
+# TICKET-005: Tag management
 
 ## Summary
 
-Add `TaskService.add_tag(task_id: int, tag: str) -> Task`.
+Full tag support on tasks.
 
 ## Acceptance criteria
 
-- Tag is trimmed and lowercased before storing.
-- Adding a tag that already exists (in any letter case) is a no-op: no duplicates (SPEC §1).
-- Missing task id raises `TaskNotFoundError`.
-- Change is persisted.
+- `normalize_tag(tag: str) -> str` in `taskboard/utils.py`: strip + lowercase; blank raises `ValueError`.
+- `create_task` normalizes tags and drops duplicates, keeping first-seen order.
+- `TaskService.add_tag(task_id: int, tag: str) -> Task`: normalized; adding a tag that already exists **in any letter case** is a no-op (SPEC §1).
+- `TaskService.remove_tag(task_id: int, tag: str) -> Task`: **case-insensitive**; removing an absent tag is a no-op.
+- `TaskService.list_tags() -> list[str]`: all distinct tags across tasks, sorted.
+- `TaskService.tasks_with_tag(tag: str) -> list[Task]`: case-insensitive, ordered by id.
+- Missing task ids raise `TaskNotFoundError`. Changes are persisted.
+- Tests included.
