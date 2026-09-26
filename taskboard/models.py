@@ -22,3 +22,11 @@ class Task:
     done: bool = False
     tags: list[str] = field(default_factory=list)
     id: int | None = None
+
+    def summary(self) -> str:
+        """Return a one-line human-readable description of the task."""
+        box = "[x]" if self.done else "[ ]"
+        details = f"P{self.priority}"
+        if self.due_date:
+            details += f", due {self.due_date.isoformat()}"
+        return f"{box} #{self.id} {self.title} ({details})"
