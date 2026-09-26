@@ -78,6 +78,39 @@ class TaskRepository:
         if cur.rowcount == 0:
             raise TaskNotFoundError(task.id)
 
+    def update_priority(self, task_id: int, priority: int) -> None:
+        """Set the priority of an existing task.
+
+        Only the ``priority`` column is written; every other field is left
+        untouched. The value is stored as given, since range checks belong
+        to the service layer.
+
+        Args:
+            task_id: Id of the task to change.
+            priority: New priority level.
+
+        Raises:
+            TaskNotFoundError: If ``task_id`` does not exist.
+        """
+        cur = self._conn.execute(
+            "UPDATE tasks SET priority = ? WHERE id = ?",
+            (priority, task_id),
+        )
+        self._conn.commit()
+        if cur.rowcount == 0:
+            raise TaskNotFoundError(task_id)
+
+    def list_open_by_priority(self) -> list[Task]:
+        """Return tasks that are not done, most urgent first.
+
+        Tasks are ordered by priority ascending (1 = most urgent), with ties
+        broken by id so the order is stable.
+        """
+        rows = self._conn.execute(
+            "SELECT * FROM tasks WHERE done = 0 ORDER BY priority, id"
+        ).fetchall()
+        return [_row_to_task(r) for r in rows]
+
 
 def _row_to_task(row: sqlite3.Row) -> Task:
     return Task(

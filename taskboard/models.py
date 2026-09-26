@@ -7,6 +7,7 @@ from datetime import date
 
 MIN_PRIORITY = 1
 MAX_PRIORITY = 5
+DEFAULT_PRIORITY = 3
 
 
 @dataclass
@@ -17,7 +18,7 @@ class Task:
     """
 
     title: str
-    priority: int = 3
+    priority: int = DEFAULT_PRIORITY
     due_date: date | None = None
     done: bool = False
     tags: list[str] = field(default_factory=list)
