@@ -45,3 +45,30 @@ class TaskService:
     def list_tasks(self) -> list[Task]:
         """Return all tasks ordered by id."""
         return self._repo.list_all()
+
+    def search_tasks(
+        self,
+        query: str,
+        tag: str | None = None,
+        include_done: bool = True,
+    ) -> list[Task]:
+        """Find tasks whose title contains ``query``, ignoring case.
+
+        Args:
+            query: Text to search for. Surrounding whitespace is stripped.
+            tag: If given, only tasks carrying this tag are returned
+                (compared case-insensitively).
+            include_done: If False, completed tasks are left out.
+
+        Returns:
+            The matching tasks.
+
+        Raises:
+            ValueError: If ``query`` is blank.
+        """
+        query = query.strip()
+        if not query:
+            raise ValueError("search query must not be blank")
+        tasks = self._repo.search(query, tag=tag, include_done=include_done)
+        logger.info("search for %r returned %d task(s)", query, len(tasks))
+        return tasks
