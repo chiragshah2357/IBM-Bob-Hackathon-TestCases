@@ -3,10 +3,13 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from datetime import date
 
 from taskboard.models import Task
+
+logger = logging.getLogger(__name__)
 
 
 class TaskNotFoundError(LookupError):
@@ -77,6 +80,56 @@ class TaskRepository:
         self._conn.commit()
         if cur.rowcount == 0:
             raise TaskNotFoundError(task.id)
+
+    def delete(self, task_id: int) -> bool:
+        """Delete the task with ``task_id``.
+
+        The deletion is committed immediately. Ids are never handed out again
+        because the table uses ``AUTOINCREMENT``.
+
+        Returns:
+            True if a task was removed, False if no task had that id.
+        """
+        cur = self._write("DELETE FROM tasks WHERE id = ?", (task_id,))
+        removed = cur.rowcount > 0
+        logger.debug("delete task %s: %d row(s) removed", task_id, cur.rowcount)
+        return removed
+
+    def delete_completed(self) -> int:
+        """Delete every task marked done in a single statement.
+
+        Open tasks are left untouched.
+
+        Returns:
+            The number of tasks removed; 0 when nothing has been completed.
+        """
+        cur = self._write("DELETE FROM tasks WHERE done = ?", (1,))
+        logger.debug("removed %d completed task(s)", cur.rowcount)
+        return cur.rowcount
+
+    def count(self) -> int:
+        """Return the total number of stored tasks.
+
+        Open and completed tasks are both counted.
+        """
+        row = self._conn.execute("SELECT COUNT(*) FROM tasks").fetchone()
+        return int(row[0])
+
+    def _write(self, sql: str, params: tuple[object, ...]) -> sqlite3.Cursor:
+        """Execute one data-changing statement and commit it.
+
+        If SQLite reports an error the open transaction is rolled back before
+        the error is re-raised, so the connection stays usable afterwards.
+        The cursor is returned so callers can read ``rowcount``.
+        """
+        try:
+            cur = self._conn.execute(sql, params)
+            self._conn.commit()
+        except sqlite3.Error:
+            self._conn.rollback()
+            logger.exception("database write failed; transaction rolled back")
+            raise
+        return cur
 
 
 def _row_to_task(row: sqlite3.Row) -> Task:
