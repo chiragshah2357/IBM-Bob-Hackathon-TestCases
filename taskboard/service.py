@@ -7,6 +7,7 @@ from datetime import date
 
 from taskboard.models import Task
 from taskboard.storage import TaskRepository
+from taskboard.utils import parse_date
 
 logger = logging.getLogger(__name__)
 
@@ -45,3 +46,20 @@ class TaskService:
     def list_tasks(self) -> list[Task]:
         """Return all tasks ordered by id."""
         return self._repo.list_all()
+
+    def set_due_date(self, task_id: int, value: str, today: date | None = None) -> Task:
+        """Set a task's due date from user input and return the updated task.
+
+        ``value`` accepts any form understood by ``parse_date``: an ISO
+        ``YYYY-MM-DD`` date, ``today``, ``tomorrow`` or ``+Nd``. Relative forms
+        are resolved against ``today``, which defaults to the current date.
+
+        Raises ValueError if ``value`` cannot be parsed and TaskNotFoundError
+        if ``task_id`` does not exist. The stored task is unchanged on error.
+        """
+        due = parse_date(value, today)
+        task = self._repo.get(task_id)
+        task.due_date = due
+        self._repo.update(task)
+        logger.info("set due date of task %s to %s", task_id, due.isoformat())
+        return task
