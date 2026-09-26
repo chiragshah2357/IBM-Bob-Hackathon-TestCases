@@ -3,10 +3,14 @@
 from __future__ import annotations
 
 import json
+import logging
 import sqlite3
 from datetime import date
 
 from taskboard.models import Task
+from taskboard.pagination import Page, validate_page_args
+
+logger = logging.getLogger(__name__)
 
 
 class TaskNotFoundError(LookupError):
@@ -60,6 +64,39 @@ class TaskRepository:
         """Return every task ordered by id."""
         rows = self._conn.execute("SELECT * FROM tasks ORDER BY id").fetchall()
         return [_row_to_task(r) for r in rows]
+
+    def count(self) -> int:
+        """Return the number of stored tasks."""
+        row = self._conn.execute("SELECT COUNT(*) FROM tasks").fetchone()
+        return int(row[0])
+
+    def list_page(self, page: int, page_size: int) -> Page:
+        """Return one page of tasks ordered by id.
+
+        Pages are 1-indexed. A page past the end has no items but still reports
+        the overall ``total``. Raises ValueError for an invalid ``page`` or
+        ``page_size``.
+        """
+        validate_page_args(page, page_size)
+        total = self.count()
+        offset = page * page_size
+        rows = self._conn.execute(
+            "SELECT * FROM tasks ORDER BY id LIMIT ? OFFSET ?",
+            (page_size, offset),
+        ).fetchall()
+        logger.debug(
+            "loaded %d task(s) for page %d (page_size=%d, total=%d)",
+            len(rows),
+            page,
+            page_size,
+            total,
+        )
+        return Page(
+            items=[_row_to_task(r) for r in rows],
+            page=page,
+            page_size=page_size,
+            total=total,
+        )
 
     def update(self, task: Task) -> None:
         """Persist changes to an existing task."""

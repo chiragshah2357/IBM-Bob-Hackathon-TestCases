@@ -6,6 +6,7 @@ import logging
 from datetime import date
 
 from taskboard.models import Task
+from taskboard.pagination import DEFAULT_PAGE_SIZE, FIRST_PAGE, Page
 from taskboard.storage import TaskRepository
 
 logger = logging.getLogger(__name__)
@@ -45,3 +46,22 @@ class TaskService:
     def list_tasks(self) -> list[Task]:
         """Return all tasks ordered by id."""
         return self._repo.list_all()
+
+    def list_tasks_page(
+        self,
+        page: int = FIRST_PAGE,
+        page_size: int = DEFAULT_PAGE_SIZE,
+    ) -> Page:
+        """Return one page of tasks ordered by id.
+
+        Pages are 1-indexed and a page past the end has no items.
+        Raises ValueError for an invalid ``page`` or ``page_size``.
+        """
+        result = self._repo.list_page(page, page_size)
+        logger.debug(
+            "listed page %d of %d (%d task(s) in total)",
+            result.page,
+            result.total_pages,
+            result.total,
+        )
+        return result
