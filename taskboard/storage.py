@@ -24,6 +24,10 @@ CREATE TABLE IF NOT EXISTS tasks (
 )
 """
 
+_UPDATE_SQL = (
+    "UPDATE tasks SET title = ?, priority = ?, due_date = ?, done = ?, tags = ? WHERE id = ?"
+)
+
 
 class TaskRepository:
     """Stores tasks in a SQLite database."""
@@ -37,13 +41,7 @@ class TaskRepository:
         """Insert a new task and return it with its id set."""
         cur = self._conn.execute(
             "INSERT INTO tasks (title, priority, due_date, done, tags) VALUES (?, ?, ?, ?, ?)",
-            (
-                task.title,
-                task.priority,
-                task.due_date.isoformat() if task.due_date else None,
-                int(task.done),
-                json.dumps(task.tags),
-            ),
+            _task_values(task),
         )
         self._conn.commit()
         task.id = cur.lastrowid
@@ -63,20 +61,35 @@ class TaskRepository:
 
     def update(self, task: Task) -> None:
         """Persist changes to an existing task."""
-        cur = self._conn.execute(
-            "UPDATE tasks SET title = ?, priority = ?, due_date = ?, done = ?, tags = ? WHERE id = ?",
-            (
-                task.title,
-                task.priority,
-                task.due_date.isoformat() if task.due_date else None,
-                int(task.done),
-                json.dumps(task.tags),
-                task.id,
-            ),
-        )
+        cur = self._conn.execute(_UPDATE_SQL, (*_task_values(task), task.id))
         self._conn.commit()
         if cur.rowcount == 0:
             raise TaskNotFoundError(task.id)
+
+    def update_many(self, tasks: list[Task]) -> None:
+        """Persist changes to several existing tasks in a single transaction.
+
+        Either every task is written or none is: if any task id does not
+        exist, the transaction is rolled back and TaskNotFoundError is raised.
+        """
+        if not tasks:
+            return
+        with self._conn:
+            for task in tasks:
+                cur = self._conn.execute(_UPDATE_SQL, (*_task_values(task), task.id))
+                if cur.rowcount == 0:
+                    raise TaskNotFoundError(task.id)
+
+
+def _task_values(task: Task) -> tuple[str, int, str | None, int, str]:
+    """Return the column values stored for ``task``, in schema order (without id)."""
+    return (
+        task.title,
+        task.priority,
+        task.due_date.isoformat() if task.due_date else None,
+        int(task.done),
+        json.dumps(task.tags),
+    )
 
 
 def _row_to_task(row: sqlite3.Row) -> Task:
